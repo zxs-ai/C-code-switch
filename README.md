@@ -27,9 +27,7 @@
 
 本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
 
-<div align="center">
-  <img src="./screenshot.png" alt="Claude Code Switcher Screenshot" width="100%" />
-</div>
+
 
 ## ✨ 核心特性
 
