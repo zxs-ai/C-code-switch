@@ -6,10 +6,10 @@
   **一款极客风、支持一键热更新的 Claude Code 代理节点切换客户端**
 
   <p>
-    <a href="https://github.com/zxs-ai/C-code-swich/releases">
+    <a href="https://github.com/zxs-ai/C-code-switch/releases">
       <img src="https://img.shields.io/badge/Platform-Mac%20%7C%20Win-blue.svg?style=flat-square" alt="Platform" />
     </a>
-    <a href="https://github.com/zxs-ai/C-code-swich/blob/main/LICENSE">
+    <a href="https://github.com/zxs-ai/C-code-switch/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" />
     </a>
   </p>
@@ -38,7 +38,7 @@
 
 本项目支持通过 **Electron** 直接打包成 Mac 和 Windows 的独立应用客户端！
 
-你可以直接前往 [Releases 页面](https://github.com/zxs-ai/C-code-swich/releases) 下载打包好的 `Claude Code Switcher.dmg` (Mac) 或 `Claude Code Switcher Setup.exe` (Windows)。
+你可以直接前往 [Releases 页面](https://github.com/zxs-ai/C-code-switch/releases) 下载打包好的 `Claude Code Switcher.dmg` (Mac) 或 `Claude Code Switcher Setup.exe` (Windows)。
 
 或者你也可以在本地环境运行。
 
@@ -48,8 +48,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/zxs-ai/C-code-swich.git
-cd C-code-swich
+git clone https://github.com/zxs-ai/C-code-switch.git
+cd C-code-switch
 
 # 2. 方式一：运行轻量级 Web 版
 双击运行目录下的 `启动服务.command` 文件即可。
@@ -78,12 +78,12 @@ npm run build:win
 ## 📝 常见问题与需求留言
 
 **Q: 为什么我点了立即生效，但 Cursor/VS Code 内置终端没变？**  
-**A:** “立即生效”功能使用的是 macOS 原生的 AppleScript，它会操控你系统的 `Terminal (终端)` App。对于第三方编辑器的内置终端，你只需手动在终端里按下 `Ctrl+C` 退出当前 claude，然后输入 `source ~/.zshrc && claude` 即可。
+**A:** “立即生效”功能使用的是 macOS 原生的 AppleScript，它会操控你系统的 `Terminal (终端)` App。对于第三方编辑器的内置终端，你只需手动在终端里按下 `Ctrl+C`退出当前 claude，然后输入 `source ~/.zshrc && claude` 即可。
 
 **Q: 如果我有更多的需求怎么办？**  
-**A:** 本项目完全开源！如果你有任何需求或者遇到 Bug，非常欢迎提交 [Issues](https://github.com/zxs-ai/C-code-swich/issues)，你可以直接在仓库留言。
+**A:** 本项目完全开源！如果你有任何需求或者遇到 Bug，非常欢迎提交    <a href="https://github.com/zxs-ai/C-code-switch" target="_blank" style="color: #6366f1; text-decoration: none; margin-top: 8px; display: inline-block;">https://github.com/zxs-ai/C-code-switch</a>
 
 ---
 
 > **Open Source Project | by zxs © 2026**  
-> GitHub Repository: [https://github.com/zxs-ai/C-code-swich](https://github.com/zxs-ai/C-code-swich)
+> GitHub Repository: [https://github.com/zxs-ai/C-code-switch](https://github.com/zxs-ai/C-code-switch)
