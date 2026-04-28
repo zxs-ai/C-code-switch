@@ -26,6 +26,10 @@
 
 本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
 
+<div align="center">
+  <img src="./screenshot.png" alt="Claude Code Switcher Screenshot" width="100%" />
+</div>
+
 ## ✨ 核心特性
 
 - 🎨 **极客暗黑风 UI**: 精心调配的赛博朋克深色模式，符合开发者的直觉。
@@ -81,7 +85,7 @@ npm run build:win
 **A:** “立即生效”功能使用的是 macOS 原生的 AppleScript，它会操控你系统的 `Terminal (终端)` App。对于第三方编辑器的内置终端，你只需手动在终端里按下 `Ctrl+C`退出当前 claude，然后输入 `source ~/.zshrc && claude` 即可。
 
 **Q: 如果我有更多的需求怎么办？**  
-**A:** 本项目完全开源！如果你有任何需求或者遇到 Bug，非常欢迎提交    <a href="https://github.com/zxs-ai/C-code-switch" target="_blank" style="color: #6366f1; text-decoration: none; margin-top: 8px; display: inline-block;">https://github.com/zxs-ai/C-code-switch</a>
+**A:** 本项目完全开源！如果你有任何需求或者遇到 Bug，非常欢迎提交 [Issues](https://github.com/zxs-ai/C-code-switch/issues)，你可以直接在仓库留言。
 
 ---
 
