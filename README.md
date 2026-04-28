@@ -1,6 +1,17 @@
+
+
+## 💡 项目初衷 (Why build this?)
+
+当开发者在使用 [Claude Code](https://github.com/anthropics/claude-code) 或 [OpenAI Codex CLI](https://github.com/openai/codex) 时，经常会遇到官方网络不稳定，或者需要使用第三方中转 API。
+
+但对于不熟悉终端命令或不知道怎么修改 `.zshrc` 环境变量的用户来说，来回修改环境变量是极其痛苦的。
+
+本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
+
+
 <div align="center">
-  <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="100%" />
-  <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="100%" />
+  <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="80%" />
+  <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="80%" />
   
   # API 配置切换器 (C-code-switch)
 
@@ -18,16 +29,6 @@
 </div>
 
 ---
-
-## 💡 项目初衷 (Why build this?)
-
-当开发者在使用 [Claude Code](https://github.com/anthropics/claude-code) 或 [OpenAI Codex CLI](https://github.com/openai/codex) 时，经常会遇到官方网络不稳定，或者需要使用第三方中转 API。
-
-但对于不熟悉终端命令或不知道怎么修改 `.zshrc` 环境变量的用户来说，来回修改环境变量是极其痛苦的。
-
-本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
-
-
 
 ## ✨ 核心特性
 
