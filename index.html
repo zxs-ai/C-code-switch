@@ -797,11 +797,17 @@
         }, 3000);
 
         // 显示成功弹窗 + 写入文件列表
-        const cfgFile = (cfg.type || 'claude') === 'codex' ? '~/.codex/config.toml' : '~/.claude/settings.json';
-        const filesHtml = [
-          { icon: '📄', name: '~/.zshrc', desc: '终端环境变量' },
-          { icon: '⚙️', name: cfgFile, desc: (cfg.type || 'claude') === 'codex' ? 'Codex CLI 配置' : 'VSCode Claude Code 配置' },
-        ].map(f => `<div class="modal-file-row"><span class="mf-icon">${f.icon}</span>${f.name} <span style="color:var(--muted);margin-left:auto;font-size:10px">${f.desc}</span></div>`).join('');
+        const isCodex = (cfg.type || 'claude') === 'codex';
+        const cfgFile = isCodex ? '~/.codex/config.toml' : '~/.claude/settings.json';
+        const fileRows = isCodex ? [
+          { icon: '📄', name: '~/.zshrc',              desc: '终端环境变量' },
+          { icon: '⚙️', name: '~/.codex/config.toml',  desc: 'Codex CLI 配置' },
+        ] : [
+          { icon: '📄', name: '~/.zshrc',                     desc: '终端环境变量' },
+          { icon: '⚙️', name: '~/.claude/settings.json',      desc: 'Claude Code 配置' },
+          { icon: '🖥️', name: 'VSCode settings.json',         desc: 'claudeCode.environmentVariables' },
+        ];
+        const filesHtml = fileRows.map(f => `<div class="modal-file-row"><span class="mf-icon">${f.icon}</span>${f.name} <span style="color:var(--muted);margin-left:auto;font-size:10px">${f.desc}</span></div>`).join('');
         document.getElementById('modalFiles').innerHTML = filesHtml;
         document.getElementById('syncModal').classList.add('show');
 

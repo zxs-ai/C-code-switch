@@ -39,6 +39,12 @@ const CLAUDE_SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
 // ── Codex config.toml 路径 (Codex CLI 读取) ──
 const CODEX_CONFIG = path.join(os.homedir(), '.codex', 'config.toml');
 
+// ── VSCode User settings.json 路径 (claudeCode.environmentVariables) ──
+const VSCODE_SETTINGS = path.join(
+  os.homedir(),
+  'Library', 'Application Support', 'Code', 'User', 'settings.json'
+);
+
 // ── 双平台配置块 ──────────────────────────────────────────
 const BLOCKS = {
   claude: {
@@ -136,6 +142,56 @@ function applyToClaudeSettings(key, proxy) {
 
   fs.writeFileSync(CLAUDE_SETTINGS, JSON.stringify(settings, null, 2) + '\n', 'utf8');
   console.log('✅ 已写入 ~/.claude/settings.json env 字段');
+
+  // 同时同步到 VSCode 的 claudeCode.environmentVariables
+  applyToVSCodeSettings(key, proxy);
+}
+
+// ── 写入 VSCode User settings.json 的 claudeCode.environmentVariables ──
+// 这才是 VSCode Claude Code 扩展真正读取的认证字段
+function applyToVSCodeSettings(key, proxy) {
+  if (!fs.existsSync(VSCODE_SETTINGS)) {
+    console.warn('⚠ 未找到 VSCode settings.json，跳过');
+    return;
+  }
+
+  let raw = fs.readFileSync(VSCODE_SETTINGS, 'utf8');
+
+  // 移除内嵌注释 (JSON 不支持注释，但用户文件里有 // 注释)
+  const stripped = raw.replace(/\/\/[^\n]*/g, '').replace(/,\s*([}\]])/g, '$1');
+
+  let vscodeSettings = {};
+  try {
+    vscodeSettings = JSON.parse(stripped);
+  } catch (e) {
+    console.warn('⚠ 解析 VSCode settings.json 失败，跳过:', e.message);
+    return;
+  }
+
+  // 更新 claudeCode.environmentVariables
+  vscodeSettings['claudeCode.environmentVariables'] = [
+    { name: 'ANTHROPIC_BASE_URL',                   value: proxy },
+    { name: 'ANTHROPIC_AUTH_TOKEN',                 value: key   },
+    { name: 'CLAUDE_CODE_ATTRIBUTION_HEADER',       value: '0'   },
+    { name: 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', value: '1' },
+    { name: 'CLAUDE_CODE_DISABLE_TERMINAL_TITLE',   value: '1'   },
+  ];
+
+  // 写回文件时保留原始内容结构，只替换 claudeCode.environmentVariables 块
+  // 使用正则匹配替换，不破坏用户的注释
+  const envVarBlock = JSON.stringify(vscodeSettings['claudeCode.environmentVariables'], null, 4)
+    .split('\n').map((l, i) => i === 0 ? l : '    ' + l).join('\n');
+
+  const pattern = /"claudeCode\.environmentVariables"\s*:\s*\[[\s\S]*?\]/;
+  if (pattern.test(raw)) {
+    raw = raw.replace(pattern, `"claudeCode.environmentVariables": ${envVarBlock}`);
+  } else {
+    // 如果不存在则追加（在最后一个 } 前）
+    raw = raw.replace(/}\s*$/, `  "claudeCode.environmentVariables": ${envVarBlock}\n}`);
+  }
+
+  fs.writeFileSync(VSCODE_SETTINGS, raw, 'utf8');
+  console.log('✅ 已写入 VSCode claudeCode.environmentVariables');
 }
 
 // ── 写入 ~/.codex/config.toml ─────────────────────────────
@@ -376,4 +432,5 @@ server.listen(PORT, () => {
   console.log(`   写入文件: ${ZSHRC}`);
   console.log(`   写入文件: ${CLAUDE_SETTINGS}`);
   console.log(`   写入文件: ${CODEX_CONFIG}`);
+  console.log(`   写入文件: ${VSCODE_SETTINGS}`);
 });
