@@ -1,9 +1,9 @@
 <div align="center">
   <img src="./cover.png" alt="Claude Code Switcher Cover" width="30%" />
   
-  # Claude Code Switcher (C-code-switch)
+  # API 配置切换器 (C-code-switch)
 
-  **一款极客风、支持一键热更新的 Claude Code 代理节点切换客户端**
+  **一款极客风、支持一键热更新的 Claude Code + OpenAI Codex 双平台代理节点切换客户端**
 
   <p>
     <a href="https://github.com/zxs-ai/C-code-switch/releases">
@@ -20,9 +20,9 @@
 
 ## 💡 项目初衷 (Why build this?)
 
-当开发者在使用 [Claude Code](https://github.com/anthropics/claude-code) 时，经常会遇到官方网络不稳定，或者需要使用第三方中转 API (如各类代理池、团队共享 Token 等)。
+当开发者在使用 [Claude Code](https://github.com/anthropics/claude-code) 或 [OpenAI Codex CLI](https://github.com/openai/codex) 时，经常会遇到官方网络不稳定，或者需要使用第三方中转 API。
 
-但对于不熟悉终端命令或不知道怎么修改 `.zshrc` 环境变量的用户来说，来回修改 `ANTHROPIC_BASE_URL` 和 `ANTHROPIC_AUTH_TOKEN` 是极其痛苦的。
+但对于不熟悉终端命令或不知道怎么修改 `.zshrc` 环境变量的用户来说，来回修改环境变量是极其痛苦的。
 
 本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
 
@@ -33,8 +33,9 @@
 ## ✨ 核心特性
 
 - 🎨 **极客暗黑风 UI**: 精心调配的赛博朋克深色模式，符合开发者的直觉。
-- ⚡️ **一键无缝切换**: 预存多个中转配置，鼠标一键自动写入 `~/.zshrc`。
-- 🔄 **终端一键热更新**: 独家支持 AppleScript 控制功能，点一下「立即生效」，自动帮你打开的系统终端执行 `source ~/.zshrc`，立刻生效，再也不用手动敲命令。
+- 🔀 **双平台支持**: 同一界面管理 Claude Code (靛蓝) 和 Codex CLI (翠绿) 配置，颜色一目了然。
+- ⚡️ **一键无缝切换**: 预存多个中转配置，鼠标一键自动写入 `~/.zshrc`，两个平台环境变量互不干扰。
+- 🔄 **终端一键热更新**: 独家支持 AppleScript 控制功能，点一下「立即生效」，自动帮你打开的系统终端执行 `source ~/.zshrc`，立刻生效。
 - 💾 **无感备份导入**: 无论换电脑还是重装，JSON一键导入导出，且每次切换自动存有「本地快照」，防手残。
 
 ## 🚀 下载与安装 (客户端)

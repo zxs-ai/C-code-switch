@@ -2,43 +2,63 @@ const http  = require('http');
 const fs    = require('fs');
 const path  = require('path');
 const os    = require('os');
-const { execSync, execFileSync, spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const PORT  = 7823;
 const ZSHRC = path.join(os.homedir(), '.zshrc');
 
-const BLOCK_START = '# Claude Code Configuration (Proxy)';
-const BLOCK_END   = '# /Claude Code Configuration';
-
-function buildBlock(token, proxyUrl) {
-  return [
-    BLOCK_START,
-    `export ANTHROPIC_BASE_URL="${proxyUrl}"`,
-    `export ANTHROPIC_AUTH_TOKEN="${token}"`,
-    BLOCK_END,
-  ].join('\n');
-}
+// ── 双平台配置块 ──────────────────────────────────────────
+const BLOCKS = {
+  claude: {
+    start: '# Claude Code Configuration (Proxy)',
+    end:   '# /Claude Code Configuration',
+    build: (key, proxy) => [
+      '# Claude Code Configuration (Proxy)',
+      `export ANTHROPIC_BASE_URL="${escapeShellValue(proxy)}"`,
+      `export ANTHROPIC_AUTH_TOKEN="${escapeShellValue(key)}"`,
+      '# /Claude Code Configuration',
+    ].join('\n'),
+    cleanRe: /ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|ANTHROPIC_BASE_URL/,
+  },
+  codex: {
+    start: '# Codex CLI Configuration (Proxy)',
+    end:   '# /Codex CLI Configuration',
+    build: (key, proxy) => [
+      '# Codex CLI Configuration (Proxy)',
+      `export OPENAI_API_KEY="${escapeShellValue(key)}"`,
+      `export OPENAI_BASE_URL="${escapeShellValue(proxy)}"`,
+      '# /Codex CLI Configuration',
+    ].join('\n'),
+    cleanRe: /OPENAI_API_KEY|OPENAI_BASE_URL/,
+  },
+};
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function applyToZshrc(token, proxyUrl) {
-  let content = fs.existsSync(ZSHRC) ? fs.readFileSync(ZSHRC, 'utf8') : '';
-  const newBlock = buildBlock(token, proxyUrl);
+// 转义 shell 双引号字符串中的特殊字符
+function escapeShellValue(str) {
+  return str.replace(/[\\"$`!]/g, '\\$&');
+}
 
-  const blockPattern = new RegExp(
-    escapeRegex(BLOCK_START) + '[\\s\\S]*?' + escapeRegex(BLOCK_END)
+function applyToZshrc(type, key, proxy) {
+  const block = BLOCKS[type];
+  if (!block) throw new Error('未知类型: ' + type);
+
+  let content = fs.existsSync(ZSHRC) ? fs.readFileSync(ZSHRC, 'utf8') : '';
+  const newBlock = block.build(key, proxy);
+
+  const pattern = new RegExp(
+    escapeRegex(block.start) + '[\\s\\S]*?' + escapeRegex(block.end)
   );
 
-  const replaced = content.replace(blockPattern, newBlock);
+  const replaced = content.replace(pattern, newBlock);
   if (replaced !== content) {
-    // 已有标记块 → 原地替换
     content = replaced;
   } else {
-    // 没有标记块 → 清理旧版散落变量行，追加新块
     content = content
       .split('\n')
-      .filter(l => !/ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|ANTHROPIC_BASE_URL/.test(l))
+      .filter(l => !block.cleanRe.test(l))
       .join('\n')
       .trimEnd();
     content += '\n\n' + newBlock + '\n';
@@ -48,7 +68,6 @@ function applyToZshrc(token, proxyUrl) {
 }
 
 function openZshrc() {
-  // macOS: 用默认文本编辑器打开 ~/.zshrc
   try {
     spawn('open', [ZSHRC], { detached: true, stdio: 'ignore' }).unref();
   } catch (e) {
@@ -58,7 +77,6 @@ function openZshrc() {
 
 // ── HTTP Server ──────────────────────────────────────────
 const server = http.createServer((req, res) => {
-  // CORS: 仅允许本地请求
   const allowedOrigins = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -76,7 +94,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // GET /read-zshrc → 返回 ~/.zshrc 内容给前端展示
+  // GET /read-zshrc
   if (req.method === 'GET' && req.url === '/read-zshrc') {
     try {
       const content = fs.existsSync(ZSHRC) ? fs.readFileSync(ZSHRC, 'utf8') : '(文件不存在)';
@@ -89,19 +107,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // POST /apply  body: { token, proxy }
+  // POST /apply  body: { type, key, proxy }
   if (req.method === 'POST' && req.url === '/apply') {
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
       try {
-        const { token, proxy } = JSON.parse(body);
-        if (!token) throw new Error('AUTH TOKEN 不能为空');
-        if (!proxy) throw new Error('代理地址 (ANTHROPIC_BASE_URL) 不能为空');
+        const { type, key, proxy } = JSON.parse(body);
+        if (!type || !BLOCKS[type]) throw new Error('请指定类型 (claude/codex)');
+        if (!key)   throw new Error('API Key / Token 不能为空');
+        if (!proxy) throw new Error('代理地址不能为空');
 
-        applyToZshrc(token, proxy);
-
-        // 同步成功后打开文件让用户确认
+        applyToZshrc(type, key, proxy);
         openZshrc();
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -120,7 +137,7 @@ const server = http.createServer((req, res) => {
       const lines = [
         'try',
         '  tell application "Terminal"',
-        '    do script "source ~/.zshrc && echo \\"✅ Claude 配置已生效！\\"" in front window',
+        '    do script "source ~/.zshrc && echo \\\\"✅ 配置已生效！\\\\"" in front window',
         '  end tell',
         'end try'
       ];

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude 配置切换器 v5</title>
+<title>API 配置切换器 v6</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap');
 
@@ -383,6 +383,49 @@
     color: #818cf8;
     font-weight: 600;
   }
+
+  /* ── Type badge on cards ── */
+  .type-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em;
+    flex-shrink: 0; text-transform: uppercase;
+  }
+  .type-badge.claude {
+    background: rgba(99,102,241,0.15); color: #818cf8;
+    border: 1px solid rgba(99,102,241,0.3);
+  }
+  .type-badge.codex {
+    background: rgba(16,185,129,0.15); color: #6ee7b7;
+    border: 1px solid rgba(16,185,129,0.3);
+  }
+  /* Codex selected card override */
+  .config-card.selected.codex-card { border-color: #10b981; background: rgba(16,185,129,0.12); }
+  .config-card.selected.codex-card .radio-ring { border-color: #10b981; }
+  .config-card.selected.codex-card .radio-dot { background: #10b981; }
+  .config-card.selected.codex-card .tag { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); color: #6ee7b7; }
+  /* Type toggle in add form */
+  .type-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+  .type-toggle-btn {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border2);
+    background: transparent; color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .type-toggle-btn.active.claude-toggle {
+    border-color: #6366f1; color: #818cf8; background: rgba(99,102,241,0.12);
+  }
+  .type-toggle-btn.active.codex-toggle {
+    border-color: #10b981; color: #6ee7b7; background: rgba(16,185,129,0.12);
+  }
+  /* Banner type indicator */
+  .active-type-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 3px; margin-left: 8px;
+    letter-spacing: 0.05em; vertical-align: middle;
+  }
+  .active-type-badge.claude { background: rgba(99,102,241,0.2); color: #818cf8; }
+  .active-type-badge.codex { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+
 </style>
 </head>
 <body>
@@ -393,11 +436,11 @@
     <div class="logo-row">
       <div class="logo-mark">⚡</div>
       <div class="title-group">
-        <h1>Claude 配置切换器</h1>
-        <span class="version-badge">v5</span>
+        <h1>API 配置切换器</h1>
+        <span class="version-badge">v6</span>
       </div>
     </div>
-    <div class="tagline">// 选中配置 → 点同步 → 自动写入 ~/.zshrc</div>
+    <div class="tagline">// Claude + Codex 双平台 · 选中配置 → 点同步 → 写入 ~/.zshrc</div>
   </div>
 
   <!-- Offline notice -->
@@ -447,16 +490,20 @@
     <!-- Add form -->
     <div class="add-form">
       <div class="form-title">+ 添加新配置</div>
+      <div class="type-toggle">
+        <button class="type-toggle-btn claude-toggle active" onclick="setAddType('claude',this)">⚡ Claude</button>
+        <button class="type-toggle-btn codex-toggle" onclick="setAddType('codex',this)">🤖 Codex</button>
+      </div>
       <div class="field">
         <label>配置名称</label>
         <input type="text" id="nameInput" placeholder="例如：官方直连、A代理、B中转" />
       </div>
       <div class="field">
-        <label>AUTH TOKEN <span class="opt">（ANTHROPIC_AUTH_TOKEN）</span></label>
+        <label id="keyLabel">AUTH TOKEN <span class="opt">（ANTHROPIC_AUTH_TOKEN）</span></label>
         <input type="text" id="keyInput" placeholder="sk-ant-..." autocomplete="off" />
       </div>
       <div class="field">
-        <label>代理地址 <span class="opt">（ANTHROPIC_BASE_URL · 必填）</span></label>
+        <label id="proxyLabel">代理地址 <span class="opt">（ANTHROPIC_BASE_URL · 必填）</span></label>
         <input type="text" id="proxyInput" placeholder="https://your-proxy.example.com/..." />
       </div>
       <button class="add-btn" onclick="addConfig()">添加配置</button>
@@ -507,10 +554,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const STORE   = 'claude_cfgs_v4';   // 保持 key 一致，旧数据不丢失
+  const STORE   = 'api_cfgs_v6';
   const HISTORY = 'claude_cfgs_history';
   const API     = 'http://localhost:7823';
-  let configs = [], selectedId = null, importMode = 'merge';
+  let configs = [], selectedId = null, importMode = 'merge', addType = 'claude';
 
   // ── Storage ──────────────────────────────────────
   function persist() {
@@ -518,8 +565,21 @@
   }
   function hydrate() {
     try {
-      const d = JSON.parse(localStorage.getItem(STORE) || '{}');
+      let d = JSON.parse(localStorage.getItem(STORE) || '{}');
+      // 旧版数据迁移 (claude_cfgs_v4 → api_cfgs_v6)
+      if ((!d.configs || !d.configs.length) && localStorage.getItem('claude_cfgs_v4')) {
+        try {
+          const old = JSON.parse(localStorage.getItem('claude_cfgs_v4'));
+          if (old.configs && old.configs.length) {
+            d = old;
+            d.configs.forEach(c => { if (!c.type) c.type = 'claude'; });
+            localStorage.setItem(STORE, JSON.stringify(d));
+          }
+        } catch {}
+      }
       configs    = d.configs    || [];
+      // 确保所有配置都有 type 字段
+      configs.forEach(c => { if (!c.type) c.type = 'claude'; });
       selectedId = d.selectedId || null;
     } catch {}
   }
@@ -562,8 +622,10 @@
     const banner = document.getElementById('activeBanner');
     if (cfg) {
       banner.classList.add('live');
-      document.getElementById('activeName').textContent = cfg.name;
       const kp = cfg.key ? cfg.key.slice(0, 12) + '···' + cfg.key.slice(-5) : '(无token)';
+      const typeLabel = cfg.type === 'codex' ? 'Codex' : 'Claude';
+      const typeCls = cfg.type === 'codex' ? 'codex' : 'claude';
+      document.getElementById('activeName').innerHTML = esc(cfg.name) + ' <span class="active-type-badge ' + typeCls + '">' + typeLabel + '</span>';
       document.getElementById('activeMeta').textContent = kp + '  ·  ' + (cfg.proxy || '(无代理地址)');
     } else {
       banner.classList.remove('live');
@@ -582,10 +644,12 @@
       const sel = c.id === selectedId;
       const kp  = c.key ? c.key.slice(0, 12) + '···' + c.key.slice(-5) : '(无token)';
       const safeId = esc(c.id);
-      return `<div class="config-card ${sel ? 'selected' : ''}" onclick="selectCfg('${safeId}')">
+      const t = c.type || 'claude';
+      const cardCls = t === 'codex' ? 'codex-card' : '';
+      return `<div class="config-card ${sel ? 'selected' : ''} ${cardCls}" onclick="selectCfg('${safeId}')">
         <div class="radio-ring"><div class="radio-dot"></div></div>
         <div class="config-info">
-          <div class="config-name">${esc(c.name)}</div>
+          <div class="config-name">${esc(c.name)} <span class="type-badge ${t}">${t === 'codex' ? '🤖 Codex' : '⚡ Claude'}</span></div>
           <div class="config-tags">
             <span class="tag">🔑 ${esc(kp)}</span>
             <span class="tag">🌐 ${c.proxy ? esc(c.proxy) : '(无代理)'}</span>
@@ -632,7 +696,7 @@
     if (!key)   { shake('keyInput',   '请输入 Token');  return; }
     if (!proxy) { shake('proxyInput', '代理地址必填');  return; }
 
-    configs.push({ id: Date.now().toString(), name, key, proxy });
+    configs.push({ id: Date.now().toString(), name, key, proxy, type: addType });
     if (!selectedId) selectedId = configs[configs.length - 1].id;
     persist();
     ['nameInput', 'keyInput', 'proxyInput'].forEach(id => document.getElementById(id).value = '');
@@ -655,7 +719,7 @@
       const r = await fetch(API + '/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: cfg.key, proxy: cfg.proxy })
+        body: JSON.stringify({ type: cfg.type || 'claude', key: cfg.key, proxy: cfg.proxy })
       });
       const data = await r.json();
 
@@ -689,7 +753,7 @@
 
       const raw = data.content;
       // 把 Claude 配置块高亮显示
-      const parts = raw.split(/(# Claude Code Configuration \(Proxy\)[\s\S]*?# \/Claude Code Configuration)/);
+      const parts = raw.split(/(# (?:Claude Code|Codex CLI) Configuration \(Proxy\)[\s\S]*?# \/(?:Claude Code|Codex CLI) Configuration)/);
       let html = '';
       parts.forEach((p, i) => {
         if (i % 2 === 1) {
@@ -838,6 +902,22 @@
     if (e.key === 'Enter' && ['nameInput', 'keyInput', 'proxyInput'].includes(document.activeElement?.id))
       addConfig();
   });
+
+
+  // ── Type toggle in add form ─────────────────────
+  function setAddType(type, btn) {
+    addType = type;
+    document.querySelectorAll('.type-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const isCodex = type === 'codex';
+    document.getElementById('keyLabel').innerHTML = isCodex
+      ? 'API KEY <span class="opt">（OPENAI_API_KEY）</span>'
+      : 'AUTH TOKEN <span class="opt">（ANTHROPIC_AUTH_TOKEN）</span>';
+    document.getElementById('proxyLabel').innerHTML = isCodex
+      ? '代理地址 <span class="opt">（OPENAI_BASE_URL · 必填）</span>'
+      : '代理地址 <span class="opt">（ANTHROPIC_BASE_URL · 必填）</span>';
+    document.getElementById('keyInput').placeholder = isCodex ? 'sk-...' : 'sk-ant-...';
+  }
 
   hydrate();
   render();

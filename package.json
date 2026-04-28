@@ -1,6 +1,6 @@
 {
   "name": "claude-code-switcher",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "A sleek UI for effortlessly managing and switching Claude Code configurations and API keys.",
   "main": "main.js",
   "scripts": {
