@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./cover.png" alt="Claude Code Switcher Cover" width="100%" />
+  <img src="./cover.png" alt="Claude Code Switcher Cover" width="60%" />
   
   # Claude Code Switcher (C-code-switch)
 
