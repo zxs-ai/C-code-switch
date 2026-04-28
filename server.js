@@ -26,19 +26,14 @@ function applyToZshrc(token, proxyUrl) {
   let content = fs.existsSync(ZSHRC) ? fs.readFileSync(ZSHRC, 'utf8') : '';
   const newBlock = buildBlock(token, proxyUrl);
 
-  // 关键修复：不要用同一个 RegExp 对象先 .test() 再 .replace()
-  // .test() 会推进 lastIndex，导致后续 .replace() 匹配失败
-  // 直接用 .replace() 的返回值判断是否命中
   const blockPattern = new RegExp(
     escapeRegex(BLOCK_START) + '[\\s\\S]*?' + escapeRegex(BLOCK_END)
   );
 
-  if (blockPattern.test(content)) {
-    // 已有标记块 → 原地替换（重新创建 RegExp 避免 lastIndex 问题）
-    content = content.replace(
-      new RegExp(escapeRegex(BLOCK_START) + '[\\s\\S]*?' + escapeRegex(BLOCK_END)),
-      newBlock
-    );
+  const replaced = content.replace(blockPattern, newBlock);
+  if (replaced !== content) {
+    // 已有标记块 → 原地替换
+    content = replaced;
   } else {
     // 没有标记块 → 清理旧版散落变量行，追加新块
     content = content
@@ -63,7 +58,12 @@ function openZshrc() {
 
 // ── HTTP Server ──────────────────────────────────────────
 const server = http.createServer((req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS: 仅允许本地请求
+  const allowedOrigins = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 

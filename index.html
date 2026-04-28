@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Claude 配置切换器 v6</title>
+<title>Claude 配置切换器 v5</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap');
 
@@ -394,7 +394,7 @@
       <div class="logo-mark">⚡</div>
       <div class="title-group">
         <h1>Claude 配置切换器</h1>
-        <span class="version-badge">v6</span>
+        <span class="version-badge">v5</span>
       </div>
     </div>
     <div class="tagline">// 选中配置 → 点同步 → 自动写入 ~/.zshrc</div>
@@ -581,7 +581,8 @@
     list.innerHTML = configs.map(c => {
       const sel = c.id === selectedId;
       const kp  = c.key ? c.key.slice(0, 12) + '···' + c.key.slice(-5) : '(无token)';
-      return `<div class="config-card ${sel ? 'selected' : ''}" onclick="selectCfg('${c.id}')">
+      const safeId = esc(c.id);
+      return `<div class="config-card ${sel ? 'selected' : ''}" onclick="selectCfg('${safeId}')">
         <div class="radio-ring"><div class="radio-dot"></div></div>
         <div class="config-info">
           <div class="config-name">${esc(c.name)}</div>
@@ -590,7 +591,7 @@
             <span class="tag">🌐 ${c.proxy ? esc(c.proxy) : '(无代理)'}</span>
           </div>
         </div>
-        <button class="del-btn" title="删除" onclick="delCfg(event,'${c.id}')">✕</button>
+        <button class="del-btn" title="删除" onclick="delCfg(event,'${safeId}')">✕</button>
       </div>`;
     }).join('');
   }
@@ -692,9 +693,9 @@
       let html = '';
       parts.forEach((p, i) => {
         if (i % 2 === 1) {
-          html += `<span class="highlight-block">${escHtml(p)}</span>`;
+          html += `<span class="highlight-block">${esc(p)}</span>`;
         } else {
-          html += escHtml(p);
+          html += esc(p);
         }
       });
 
@@ -778,7 +779,7 @@
     try { data = JSON.parse(raw); } catch { toast('❌ JSON 格式错误', 'err'); return; }
     const imported = data.configs;
     if (!Array.isArray(imported) || !imported.length) { toast('❌ 未找到有效配置', 'err'); return; }
-    for (const c of imported) if (!c.id || !c.name || !c.key) { toast('❌ 数据格式不完整', 'err'); return; }
+    for (const c of imported) if (!c.id || !c.name || !c.key || !c.proxy) { toast('❌ 数据格式不完整（需要 id, name, key, proxy）', 'err'); return; }
 
     saveHistory(`导入前快照（${configs.length} 个配置）`);
 
@@ -813,15 +814,15 @@
 
   // ── Helpers ──────────────────────────────────────
   function v(id)  { return document.getElementById(id).value.trim(); }
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
 
   function shake(id, msg) {
     const el = document.getElementById(id);
+    const origPlaceholder = el.placeholder;
     el.style.borderColor = 'var(--red)';
     el.placeholder = msg;
     el.focus();
-    setTimeout(() => { el.style.borderColor = ''; el.placeholder = ''; }, 2000);
+    setTimeout(() => { el.style.borderColor = ''; el.placeholder = origPlaceholder; }, 2000);
   }
 
   let toastT;
