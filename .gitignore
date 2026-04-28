@@ -1,0 +1,4 @@
+node_modules/
+dist/
+switcher.log
+.DS_Store

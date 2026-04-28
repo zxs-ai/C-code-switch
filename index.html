@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude 配置切换器 v6</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #080810;
+    --card: #0f0f1a;
+    --card2: #141424;
+    --border: #1a1a2e;
+    --border2: #252540;
+    --accent: #6366f1;
+    --accent-dim: rgba(99,102,241,0.12);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.1);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.1);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.1);
+    --text: #e2e2f0;
+    --muted: #4a4a6a;
+    --muted2: #2e2e50;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+    background-image:
+      radial-gradient(ellipse 50% 35% at 80% -5%, rgba(99,102,241,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 30% 25% at 5% 95%, rgba(52,211,153,0.05) 0%, transparent 45%);
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 36px; }
+  .logo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  .logo-mark {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(99,102,241,0.35);
+  }
+  .title-group { display: flex; align-items: baseline; gap: 10px; }
+  h1 { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.4px; }
+  .version-badge {
+    font-size: 11px; font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+    background: var(--accent-dim); color: #818cf8;
+    border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 6px; padding: 2px 8px;
+    letter-spacing: 0.05em;
+  }
+  .tagline {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--muted); margin-left: 54px;
+  }
+
+  /* ── Offline notice ── */
+  .offline-notice {
+    background: var(--red-dim); border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 10px; padding: 12px 16px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--red);
+    margin-bottom: 20px; display: none;
+  }
+  .offline-notice.show { display: block; }
+
+  /* ── Active banner ── */
+  .active-banner {
+    border-radius: 14px; padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: all 0.25s;
+  }
+  .active-banner.live {
+    background: var(--green-dim);
+    border-color: rgba(52,211,153,0.25);
+  }
+  .active-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--muted2); flex-shrink: 0;
+  }
+  .active-banner.live .active-dot {
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+    animation: breathe 2.5s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .active-info { flex: 1; min-width: 0; }
+  .active-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--muted); margin-bottom: 3px;
+  }
+  .active-name { font-size: 15px; font-weight: 700; color: #fff; }
+  .active-meta {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--muted); margin-top: 3px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sync-btn {
+    padding: 9px 18px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff; border: none; border-radius: 9px;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; flex-shrink: 0; transition: all 0.2s;
+    display: none;
+    box-shadow: 0 0 16px rgba(99,102,241,0.3);
+  }
+  .active-banner.live .sync-btn { display: block; }
+  .sync-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .sync-btn:active { transform: translateY(0); }
+  .sync-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .sync-btn.success { background: linear-gradient(135deg, #059669, #34d399); box-shadow: 0 0 16px rgba(52,211,153,0.3); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px;
+  }
+  .tab {
+    flex: 1; padding: 8px; border: none; border-radius: 9px;
+    background: transparent; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--card2); color: #fff; border: 1px solid var(--border2); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* ── Config list ── */
+  .config-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 28px; }
+  .config-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .config-card:hover { border-color: var(--border2); background: var(--card2); }
+  .config-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .radio-ring {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--muted2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: border-color 0.15s;
+  }
+  .config-card.selected .radio-ring { border-color: var(--accent); }
+  .radio-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: none; }
+  .config-card.selected .radio-dot { display: block; }
+  .config-info { flex: 1; min-width: 0; }
+  .config-name { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 5px; }
+  .config-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 2px 7px; border-radius: 4px;
+    background: var(--card2); border: 1px solid var(--border2); color: var(--muted);
+    max-width: 270px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .config-card.selected .tag { background: var(--accent-dim); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
+  .del-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    border: none; background: transparent; color: var(--muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0; transition: all 0.15s;
+  }
+  .del-btn:hover { background: var(--red-dim); color: var(--red); }
+  .empty-state {
+    text-align: center; padding: 40px;
+    border: 1px dashed var(--border2); border-radius: 12px;
+    color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    margin-bottom: 28px;
+  }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* ── Add form ── */
+  .add-form {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px;
+  }
+  .form-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+  .field { margin-bottom: 13px; }
+  .field label {
+    display: block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .opt { font-size: 9px; color: var(--muted2); text-transform: none; letter-spacing: 0; }
+  .field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted2); }
+  .add-btn {
+    width: 100%; padding: 11px;
+    background: var(--card2); color: var(--text);
+    border: 1px solid var(--border2); border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* ── zshrc preview ── */
+  .zshrc-panel {
+    display: none;
+    margin-top: 20px;
+    background: var(--card); border: 1px solid rgba(52,211,153,0.3);
+    border-radius: 14px; overflow: hidden;
+  }
+  .zshrc-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--green-dim);
+  }
+  .zshrc-panel-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--green); font-weight: 600;
+  }
+  .zshrc-close {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px;
+    transition: color 0.15s;
+  }
+  .zshrc-close:hover { color: var(--text); }
+  .zshrc-body {
+    padding: 16px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: #9898b8; line-height: 1.7;
+    max-height: 300px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .zshrc-body .highlight-block {
+    background: rgba(99,102,241,0.12);
+    color: #a5b4fc;
+    border-left: 2px solid var(--accent);
+    display: block;
+    padding-left: 10px;
+    margin-left: -10px;
+    border-radius: 0 4px 4px 0;
+  }
+  .zshrc-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted);
+  }
+  .zshrc-footer code {
+    color: var(--accent); background: var(--accent-dim);
+    padding: 1px 6px; border-radius: 4px;
+  }
+  .source-btn {
+    padding: 6px 14px; border-radius: 6px;
+    border: 1px solid var(--accent); background: var(--accent-dim);
+    color: #a5b4fc; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  }
+  .source-btn:hover { background: rgba(99,102,241,0.25); color: #fff; }
+  .source-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Backup panel ── */
+  .backup-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .backup-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .backup-icon { font-size: 22px; }
+  .backup-title { font-size: 14px; font-weight: 700; color: #fff; }
+  .backup-desc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); line-height: 1.6; }
+  .backup-btn {
+    margin-top: 4px; padding: 9px 0; border-radius: 8px;
+    border: 1px solid var(--border2); background: var(--card2);
+    color: var(--text); font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .backup-btn.export-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .backup-btn.import-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .import-area {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  .import-area-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .import-area textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 12px; color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    outline: none; resize: vertical; min-height: 100px; line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+  .import-area textarea:focus { border-color: var(--green); }
+  .import-options { display: flex; gap: 8px; margin: 10px 0; }
+  .import-option {
+    flex: 1; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .import-option.selected { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+  .import-confirm {
+    width: 100%; padding: 10px;
+    background: linear-gradient(135deg, #059669, #34d399);
+    color: #fff; border: none; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .import-confirm:hover { opacity: 0.88; transform: translateY(-1px); }
+  .history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .history-icon { font-size: 14px; flex-shrink: 0; }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .history-date { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .history-restore {
+    padding: 5px 12px; border-radius: 6px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .history-restore:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(70px);
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 11px 18px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 99; white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.ok   { border-color: var(--green); }
+  .toast.err  { border-color: var(--red); }
+  .toast.warn { border-color: var(--amber); }
+
+  /* ── Footer Signature ── */
+  .footer-signature {
+    text-align: center;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px dashed var(--border2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .footer-signature span {
+    color: var(--muted2);
+    margin: 0 8px;
+  }
+  .footer-signature .author {
+    color: #818cf8;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo-mark">⚡</div>
+      <div class="title-group">
+        <h1>Claude 配置切换器</h1>
+        <span class="version-badge">v6</span>
+      </div>
+    </div>
+    <div class="tagline">// 选中配置 → 点同步 → 自动写入 ~/.zshrc</div>
+  </div>
+
+  <!-- Offline notice -->
+  <div class="offline-notice" id="offlineNotice">
+    ⚠ 未检测到本地服务 · 请先运行 <strong>node server.js</strong>
+  </div>
+
+  <!-- Active banner -->
+  <div class="active-banner" id="activeBanner">
+    <div class="active-dot" id="activeDot"></div>
+    <div class="active-info">
+      <div class="active-label">当前选中</div>
+      <div class="active-name" id="activeName">未选择</div>
+      <div class="active-meta" id="activeMeta">请从下方列表选择一个配置</div>
+    </div>
+    <button class="sync-btn" id="syncBtn" onclick="syncNow()">同步到 .zshrc</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-configs" onclick="switchTab('configs', this)">🗂 配置列表</button>
+    <button class="tab" id="tab-backup" onclick="switchTab('backup', this)">📦 导入导出</button>
+  </div>
+
+  <!-- ── Panel: 配置列表 ── -->
+  <div class="panel active" id="panel-configs">
+    <div class="section-label">我的配置</div>
+    <div class="config-list" id="configList">
+      <div class="empty-state">还没有配置 · 在下方添加第一个 ↓</div>
+    </div>
+
+    <!-- zshrc 预览 -->
+    <div class="zshrc-panel" id="zshrcPanel">
+      <div class="zshrc-panel-header">
+        <div class="zshrc-panel-title">✅ ~/.zshrc 写入成功 · 预览</div>
+        <button class="zshrc-close" onclick="document.getElementById('zshrcPanel').style.display='none'">×</button>
+      </div>
+      <div class="zshrc-body" id="zshrcBody"></div>
+      <div class="zshrc-footer">
+        <span>执行 <code>source ~/.zshrc</code> 使配置立即生效 · 文件已在编辑器中打开</span>
+        <button class="source-btn" id="sourceBtn" onclick="runSource()">立即生效</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Add form -->
+    <div class="add-form">
+      <div class="form-title">+ 添加新配置</div>
+      <div class="field">
+        <label>配置名称</label>
+        <input type="text" id="nameInput" placeholder="例如：官方直连、A代理、B中转" />
+      </div>
+      <div class="field">
+        <label>AUTH TOKEN <span class="opt">（ANTHROPIC_AUTH_TOKEN）</span></label>
+        <input type="text" id="keyInput" placeholder="sk-ant-..." autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>代理地址 <span class="opt">（ANTHROPIC_BASE_URL · 必填）</span></label>
+        <input type="text" id="proxyInput" placeholder="https://your-proxy.example.com/..." />
+      </div>
+      <button class="add-btn" onclick="addConfig()">添加配置</button>
+    </div>
+  </div>
+
+  <!-- ── Panel: 导入导出 ── -->
+  <div class="panel" id="panel-backup">
+    <div class="backup-cards">
+      <div class="backup-card">
+        <div class="backup-icon">📤</div>
+        <div class="backup-title">导出备份</div>
+        <div class="backup-desc">将所有配置导出为 JSON 文件，可保存到任意位置或发到其他设备</div>
+        <button class="backup-btn export-btn" onclick="exportBackup()">一键导出 .json</button>
+      </div>
+      <div class="backup-card">
+        <div class="backup-icon">📂</div>
+        <div class="backup-title">从文件导入</div>
+        <div class="backup-desc">选择之前导出的 .json 备份文件，自动读取到下方文本框</div>
+        <button class="backup-btn import-btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importFromFile(this)" />
+      </div>
+    </div>
+    <div class="import-area">
+      <div class="import-area-title">📋 粘贴 JSON 导入</div>
+      <textarea id="importTextarea" placeholder="粘贴从其他设备导出的 JSON 数据，或点上方「选择文件」自动填入..."></textarea>
+      <div class="import-options">
+        <button class="import-option selected" onclick="selectImportMode('merge', this)">合并（保留现有 + 追加新的）</button>
+        <button class="import-option" onclick="selectImportMode('replace', this)">替换（清空现有，仅保留导入）</button>
+      </div>
+      <button class="import-confirm" onclick="confirmImport()">确认导入</button>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">历史快照（同步前自动保存，最多 10 条）</div>
+    <div class="history-list" id="historyList">
+      <div class="empty-state" style="margin-bottom:0">暂无快照 · 每次同步到 .zshrc 前会自动保存一条</div>
+    </div>
+  </div>
+
+  <!-- Footer Signature -->
+  <div class="footer-signature">
+    Open Source Project <span>|</span> <span class="author">by zxs</span> <span>|</span> © 2026<br>
+    <a href="https://github.com/zxs-ai/C-code-swich" target="_blank" style="color: #6366f1; text-decoration: none; margin-top: 8px; display: inline-block;">https://github.com/zxs-ai/C-code-swich</a>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const STORE   = 'claude_cfgs_v4';   // 保持 key 一致，旧数据不丢失
+  const HISTORY = 'claude_cfgs_history';
+  const API     = 'http://localhost:7823';
+  let configs = [], selectedId = null, importMode = 'merge';
+
+  // ── Storage ──────────────────────────────────────
+  function persist() {
+    localStorage.setItem(STORE, JSON.stringify({ configs, selectedId }));
+  }
+  function hydrate() {
+    try {
+      const d = JSON.parse(localStorage.getItem(STORE) || '{}');
+      configs    = d.configs    || [];
+      selectedId = d.selectedId || null;
+    } catch {}
+  }
+  function saveHistory(label) {
+    try {
+      const hist = JSON.parse(localStorage.getItem(HISTORY) || '[]');
+      hist.unshift({ label, ts: Date.now(), configs: JSON.parse(JSON.stringify(configs)), selectedId });
+      if (hist.length > 10) hist.length = 10;
+      localStorage.setItem(HISTORY, JSON.stringify(hist));
+    } catch {}
+  }
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY) || '[]'); } catch { return []; }
+  }
+
+  // ── Server check ─────────────────────────────────
+  async function checkServer() {
+    try {
+      await fetch(API + '/', { method: 'GET', signal: AbortSignal.timeout(1200) });
+      document.getElementById('offlineNotice').classList.remove('show');
+    } catch {
+      document.getElementById('offlineNotice').classList.add('show');
+    }
+  }
+
+  // ── Tabs ─────────────────────────────────────────
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'backup') renderHistory();
+  }
+
+  // ── Render ───────────────────────────────────────
+  function render() { renderBanner(); renderList(); }
+
+  function renderBanner() {
+    const cfg    = configs.find(c => c.id === selectedId);
+    const banner = document.getElementById('activeBanner');
+    if (cfg) {
+      banner.classList.add('live');
+      document.getElementById('activeName').textContent = cfg.name;
+      const kp = cfg.key ? cfg.key.slice(0, 12) + '···' + cfg.key.slice(-5) : '(无token)';
+      document.getElementById('activeMeta').textContent = kp + '  ·  ' + (cfg.proxy || '(无代理地址)');
+    } else {
+      banner.classList.remove('live');
+      document.getElementById('activeName').textContent = '未选择';
+      document.getElementById('activeMeta').textContent = '请从下方列表选择一个配置';
+    }
+  }
+
+  function renderList() {
+    const list = document.getElementById('configList');
+    if (!configs.length) {
+      list.innerHTML = '<div class="empty-state">还没有配置 · 在下方添加第一个 ↓</div>';
+      return;
+    }
+    list.innerHTML = configs.map(c => {
+      const sel = c.id === selectedId;
+      const kp  = c.key ? c.key.slice(0, 12) + '···' + c.key.slice(-5) : '(无token)';
+      return `<div class="config-card ${sel ? 'selected' : ''}" onclick="selectCfg('${c.id}')">
+        <div class="radio-ring"><div class="radio-dot"></div></div>
+        <div class="config-info">
+          <div class="config-name">${esc(c.name)}</div>
+          <div class="config-tags">
+            <span class="tag">🔑 ${esc(kp)}</span>
+            <span class="tag">🌐 ${c.proxy ? esc(c.proxy) : '(无代理)'}</span>
+          </div>
+        </div>
+        <button class="del-btn" title="删除" onclick="delCfg(event,'${c.id}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const hist = loadHistory();
+    if (!hist.length) {
+      list.innerHTML = '<div class="empty-state" style="margin-bottom:0">暂无快照 · 每次同步到 .zshrc 前会自动保存一条</div>';
+      return;
+    }
+    list.innerHTML = hist.map((h, i) => `
+      <div class="history-item">
+        <div class="history-icon">🕐</div>
+        <div class="history-info">
+          <div class="history-name">${esc(h.label)} · ${h.configs.length} 个配置</div>
+          <div class="history-date">${new Date(h.ts).toLocaleString('zh-CN')}</div>
+        </div>
+        <button class="history-restore" onclick="restoreHistory(${i})">还原</button>
+      </div>`).join('');
+  }
+
+  // ── Actions ──────────────────────────────────────
+  function selectCfg(id) { selectedId = id; persist(); render(); }
+
+  function delCfg(e, id) {
+    e.stopPropagation();
+    configs = configs.filter(c => c.id !== id);
+    if (selectedId === id) selectedId = configs[0]?.id || null;
+    persist(); render();
+  }
+
+  function addConfig() {
+    const name  = v('nameInput');
+    const key   = v('keyInput');
+    const proxy = v('proxyInput');
+    if (!name)  { shake('nameInput',  '请输入名称');    return; }
+    if (!key)   { shake('keyInput',   '请输入 Token');  return; }
+    if (!proxy) { shake('proxyInput', '代理地址必填');  return; }
+
+    configs.push({ id: Date.now().toString(), name, key, proxy });
+    if (!selectedId) selectedId = configs[configs.length - 1].id;
+    persist();
+    ['nameInput', 'keyInput', 'proxyInput'].forEach(id => document.getElementById(id).value = '');
+    render();
+    toast('✅ 配置已添加', 'ok');
+  }
+
+  // ── Sync ─────────────────────────────────────────
+  async function syncNow() {
+    const cfg = configs.find(c => c.id === selectedId);
+    if (!cfg) return;
+
+    saveHistory(`同步「${cfg.name}」前`);
+
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    btn.textContent = '同步中...';
+
+    try {
+      const r = await fetch(API + '/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: cfg.key, proxy: cfg.proxy })
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        btn.textContent = '✓ 已同步';
+        btn.classList.add('success');
+        toast('✅ 已写入 ~/.zshrc · 文件已打开 · 执行 source ~/.zshrc 生效', 'ok');
+        setTimeout(() => {
+          btn.textContent = '同步到 .zshrc';
+          btn.classList.remove('success');
+        }, 3000);
+
+        // 读取 zshrc 并在页面内展示
+        showZshrcPreview();
+      } else {
+        throw new Error(data.msg);
+      }
+    } catch (e) {
+      toast('❌ 同步失败：' + e.message, 'err');
+      btn.textContent = '同步到 .zshrc';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function showZshrcPreview() {
+    try {
+      const r    = await fetch(API + '/read-zshrc');
+      const data = await r.json();
+      if (!data.ok) return;
+
+      const raw = data.content;
+      // 把 Claude 配置块高亮显示
+      const parts = raw.split(/(# Claude Code Configuration \(Proxy\)[\s\S]*?# \/Claude Code Configuration)/);
+      let html = '';
+      parts.forEach((p, i) => {
+        if (i % 2 === 1) {
+          html += `<span class="highlight-block">${escHtml(p)}</span>`;
+        } else {
+          html += escHtml(p);
+        }
+      });
+
+      document.getElementById('zshrcBody').innerHTML = html;
+      const panel = document.getElementById('zshrcPanel');
+      panel.style.display = 'block';
+
+      // 滚动到预览区域
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // 滚动 pre 到高亮块
+      setTimeout(() => {
+        const mark = panel.querySelector('.highlight-block');
+        if (mark) mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 400);
+    } catch (e) {
+      console.warn('showZshrcPreview failed:', e);
+    }
+  }
+
+  async function runSource() {
+    const btn = document.getElementById('sourceBtn');
+    btn.textContent = '执行中...';
+    btn.disabled = true;
+    try {
+      const r = await fetch(API + '/source', { method: 'POST' });
+      const data = await r.json();
+      if (data.ok) {
+        btn.textContent = '✓ 已生效';
+        toast('✅ 已成功让打开的终端立即生效配置', 'ok');
+      } else {
+        throw new Error(data.msg);
+      }
+    } catch(e) {
+      btn.textContent = '❌ 失败';
+      toast('❌ 立即生效执行失败: ' + e.message, 'err');
+    } finally {
+      setTimeout(() => {
+        btn.textContent = '立即生效';
+        btn.disabled = false;
+      }, 3000);
+    }
+  }
+
+  // ── Backup ───────────────────────────────────────
+  function exportBackup() {
+    if (!configs.length) { toast('⚠ 没有配置可以导出', 'warn'); return; }
+    const payload = { version: 1, exported_at: new Date().toISOString(), configs, selectedId };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `claude-configs-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`✅ 已导出 ${configs.length} 个配置`, 'ok');
+  }
+
+  function importFromFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('importTextarea').value = e.target.result;
+      toast('📂 文件已读取 · 确认模式后点「确认导入」', 'warn');
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  function selectImportMode(mode, btn) {
+    importMode = mode;
+    document.querySelectorAll('.import-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function confirmImport() {
+    const raw = document.getElementById('importTextarea').value.trim();
+    if (!raw) { toast('⚠ 请先粘贴或选择备份文件', 'warn'); return; }
+    let data;
+    try { data = JSON.parse(raw); } catch { toast('❌ JSON 格式错误', 'err'); return; }
+    const imported = data.configs;
+    if (!Array.isArray(imported) || !imported.length) { toast('❌ 未找到有效配置', 'err'); return; }
+    for (const c of imported) if (!c.id || !c.name || !c.key) { toast('❌ 数据格式不完整', 'err'); return; }
+
+    saveHistory(`导入前快照（${configs.length} 个配置）`);
+
+    if (importMode === 'replace') {
+      configs    = imported;
+      selectedId = data.selectedId || imported[0]?.id || null;
+      toast(`✅ 已替换为 ${imported.length} 个配置`, 'ok');
+    } else {
+      const existingIds = new Set(configs.map(c => c.id));
+      const newOnes     = imported.filter(c => !existingIds.has(c.id));
+      configs = [...configs, ...newOnes];
+      if (!selectedId && configs.length) selectedId = configs[0].id;
+      toast(`✅ 合并完成 · 新增 ${newOnes.length} 个，跳过 ${imported.length - newOnes.length} 个重复`, 'ok');
+    }
+
+    persist(); render();
+    document.getElementById('importTextarea').value = '';
+    document.getElementById('tab-configs').click();
+  }
+
+  function restoreHistory(index) {
+    const hist = loadHistory();
+    const snap = hist[index];
+    if (!snap) return;
+    saveHistory(`还原前快照（当前 ${configs.length} 个配置）`);
+    configs    = snap.configs;
+    selectedId = snap.selectedId;
+    persist(); render();
+    toast(`✅ 已还原到「${snap.label}」`, 'ok');
+    document.getElementById('tab-configs').click();
+  }
+
+  // ── Helpers ──────────────────────────────────────
+  function v(id)  { return document.getElementById(id).value.trim(); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function shake(id, msg) {
+    const el = document.getElementById(id);
+    el.style.borderColor = 'var(--red)';
+    el.placeholder = msg;
+    el.focus();
+    setTimeout(() => { el.style.borderColor = ''; el.placeholder = ''; }, 2000);
+  }
+
+  let toastT;
+  function toast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `toast ${type} show`;
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.className = `toast ${type}`, 4000);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && ['nameInput', 'keyInput', 'proxyInput'].includes(document.activeElement?.id))
+      addConfig();
+  });
+
+  hydrate();
+  render();
+  checkServer();
+</script>
+</body>
+</html>
