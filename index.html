@@ -716,17 +716,23 @@
     btn.textContent = '同步中...';
 
     try {
-      const r = await fetch(API + '/apply', {
+      const r = await fetch(API + '/apply-and-source', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: cfg.type || 'claude', key: cfg.key, proxy: cfg.proxy })
+        body: JSON.stringify({ type: cfg.type || 'claude', key: cfg.key, proxy: cfg.proxy, name: cfg.name })
       });
       const data = await r.json();
 
       if (data.ok) {
-        btn.textContent = '✓ 已同步';
         btn.classList.add('success');
-        toast('✅ 已写入 ~/.zshrc · 文件已打开 · 执行 source ~/.zshrc 生效', 'ok');
+        const cfgFile = (cfg.type || 'claude') === 'codex' ? '~/.codex/config.toml' : '~/.claude/settings.json';
+        if (data.sourceOk) {
+          btn.textContent = '✓ 已同步并生效';
+          toast(`✅ 已写入 ~/.zshrc + ${cfgFile} 并自动在终端中生效`, 'ok');
+        } else {
+          btn.textContent = '✓ 已同步';
+          toast(`✅ 已写入 ~/.zshrc + ${cfgFile} · 可手动点击「立即生效」`, 'warn');
+        }
         setTimeout(() => {
           btn.textContent = '同步到 .zshrc';
           btn.classList.remove('success');
