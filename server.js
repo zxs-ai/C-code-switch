@@ -48,9 +48,12 @@ const BLOCKS = {
       '# Claude Code Configuration (Proxy)',
       `export ANTHROPIC_BASE_URL="${escapeShellValue(proxy)}"`,
       `export ANTHROPIC_AUTH_TOKEN="${escapeShellValue(key)}"`,
+      'export CLAUDE_CODE_ATTRIBUTION_HEADER="0"',
+      'export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"',
+      'export CLAUDE_CODE_DISABLE_TERMINAL_TITLE="1"',
       '# /Claude Code Configuration',
     ].join('\n'),
-    cleanRe: /ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|ANTHROPIC_BASE_URL/,
+    cleanRe: /ANTHROPIC_AUTH_TOKEN|ANTHROPIC_API_KEY|ANTHROPIC_BASE_URL|CLAUDE_CODE_ATTRIBUTION_HEADER|CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC|CLAUDE_CODE_DISABLE_TERMINAL_TITLE/,
   },
   codex: {
     start: '# Codex CLI Configuration (Proxy)',
