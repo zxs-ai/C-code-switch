@@ -20,12 +20,7 @@
 本项目就是为了解决这个痛点而生：**让任何人都能通过极客风的图形界面，一键保存多个 API 配置，随时一键热更新到终端！**
 
 
-<div align="center">
-  <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="80%" />
-  <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="80%" />
-  
 
-</div>
 
 ---
 
@@ -37,6 +32,11 @@
 - 🔄 **终端一键热更新**: 独家支持 AppleScript 控制功能，点一下「立即生效」，自动帮你打开的系统终端执行 `source ~/.zshrc`，立刻生效。
 - 💾 **无感备份导入**: 无论换电脑还是重装，JSON一键导入导出，且每次切换自动存有「本地快照」，防手残。
 
+<div align="center">
+  <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="80%" />
+  <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="80%" />
+
+</div>
 ## 🚀 下载与安装 (客户端)
 
 本项目支持通过 **Electron** 直接打包成 Mac 和 Windows 的独立应用客户端！
