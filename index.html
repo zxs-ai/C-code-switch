@@ -364,6 +364,56 @@
   .toast.err  { border-color: var(--red); }
   .toast.warn { border-color: var(--amber); }
 
+  /* ── Sync Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 18px; padding: 32px 28px 24px;
+    max-width: 420px; width: 90%; text-align: center;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: modalIn 0.25s ease-out;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.92) translateY(12px); } to { opacity: 1; transform: none; } }
+  .modal-icon { font-size: 40px; margin-bottom: 14px; }
+  .modal-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .modal-desc {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--muted); line-height: 1.8; margin-bottom: 18px;
+  }
+  .modal-desc strong { color: var(--text); font-weight: 600; }
+  .modal-kbd {
+    display: inline-block; background: var(--bg); border: 1px solid var(--border2);
+    border-radius: 5px; padding: 2px 8px; margin: 0 2px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
+  }
+  .modal-files {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 18px;
+    text-align: left;
+  }
+  .modal-file-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--green); padding: 3px 0;
+  }
+  .modal-file-row .mf-icon { flex-shrink: 0; }
+  .modal-dismiss {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: #fff; border: none; border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: 0 0 20px rgba(99,102,241,0.3);
+  }
+  .modal-dismiss:hover { opacity: 0.88; transform: translateY(-1px); }
+
   /* ── Footer Signature ── */
   .footer-signature {
     text-align: center;
@@ -553,6 +603,21 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Sync Success Modal -->
+<div class="modal-overlay" id="syncModal">
+  <div class="modal-box">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">同步成功</div>
+    <div class="modal-files" id="modalFiles"></div>
+    <div class="modal-desc">
+      如果你正在使用 <strong>VSCode</strong>，请重载窗口使配置生效：<br>
+      <span class="modal-kbd">⌘</span> + <span class="modal-kbd">⇧</span> + <span class="modal-kbd">P</span>
+      → 输入 <strong>Reload Window</strong>
+    </div>
+    <button class="modal-dismiss" onclick="document.getElementById('syncModal').classList.remove('show')">知道了</button>
+  </div>
+</div>
+
 <script>
   const STORE   = 'api_cfgs_v6';
   const HISTORY = 'claude_cfgs_history';
@@ -725,18 +790,20 @@
 
       if (data.ok) {
         btn.classList.add('success');
-        const cfgFile = (cfg.type || 'claude') === 'codex' ? '~/.codex/config.toml' : '~/.claude/settings.json';
-        if (data.sourceOk) {
-          btn.textContent = '✓ 已同步并生效';
-          toast(`✅ 已写入 ~/.zshrc + ${cfgFile} 并自动在终端中生效`, 'ok');
-        } else {
-          btn.textContent = '✓ 已同步';
-          toast(`✅ 已写入 ~/.zshrc + ${cfgFile} · 可手动点击「立即生效」`, 'warn');
-        }
+        btn.textContent = '✓ 已同步';
         setTimeout(() => {
           btn.textContent = '同步到 .zshrc';
           btn.classList.remove('success');
         }, 3000);
+
+        // 显示成功弹窗 + 写入文件列表
+        const cfgFile = (cfg.type || 'claude') === 'codex' ? '~/.codex/config.toml' : '~/.claude/settings.json';
+        const filesHtml = [
+          { icon: '📄', name: '~/.zshrc', desc: '终端环境变量' },
+          { icon: '⚙️', name: cfgFile, desc: (cfg.type || 'claude') === 'codex' ? 'Codex CLI 配置' : 'VSCode Claude Code 配置' },
+        ].map(f => `<div class="modal-file-row"><span class="mf-icon">${f.icon}</span>${f.name} <span style="color:var(--muted);margin-left:auto;font-size:10px">${f.desc}</span></div>`).join('');
+        document.getElementById('modalFiles').innerHTML = filesHtml;
+        document.getElementById('syncModal').classList.add('show');
 
         // 读取 zshrc 并在页面内展示
         showZshrcPreview();
