@@ -1,5 +1,6 @@
 <div align="center">
-  <img src="./cover.png" alt="Claude Code Switcher Cover" width="30%" />
+  <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="100%" />
+  <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="100%" />
   
   # API 配置切换器 (C-code-switch)
 
