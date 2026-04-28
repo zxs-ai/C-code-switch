@@ -1,4 +1,15 @@
+  # API 配置切换器 (C-code-switch)
 
+  **一款极客风、支持一键热更新的 Claude Code + OpenAI Codex 双平台代理节点切换客户端**
+
+  <p>
+    <a href="https://github.com/zxs-ai/C-code-switch/releases">
+      <img src="https://img.shields.io/badge/Platform-Mac%20%7C%20Win-blue.svg?style=flat-square" alt="Platform" />
+    </a>
+    <a href="https://github.com/zxs-ai/C-code-switch/blob/main/LICENSE">
+      <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" />
+    </a>
+  </p>
 
 ## 💡 项目初衷 (Why build this?)
 
@@ -13,18 +24,6 @@
   <img src="./screenshot1.png" alt="API 配置切换器 - Claude 模式" width="80%" />
   <img src="./screenshot2.png" alt="API 配置切换器 - Codex 模式" width="80%" />
   
-  # API 配置切换器 (C-code-switch)
-
-  **一款极客风、支持一键热更新的 Claude Code + OpenAI Codex 双平台代理节点切换客户端**
-
-  <p>
-    <a href="https://github.com/zxs-ai/C-code-switch/releases">
-      <img src="https://img.shields.io/badge/Platform-Mac%20%7C%20Win-blue.svg?style=flat-square" alt="Platform" />
-    </a>
-    <a href="https://github.com/zxs-ai/C-code-switch/blob/main/LICENSE">
-      <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License" />
-    </a>
-  </p>
 
 </div>
 
