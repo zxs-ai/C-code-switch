@@ -414,6 +414,83 @@
   }
   .modal-dismiss:hover { opacity: 0.88; transform: translateY(-1px); }
 
+  /* ── Advanced Panel ── */
+  .advanced-panel {
+    margin-top: 32px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .advanced-panel:hover { border-color: var(--border2); }
+  .advanced-toggle {
+    width: 100%; padding: 14px 18px;
+    background: var(--card); border: none;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .advanced-toggle:hover { background: var(--card2); }
+  .advanced-toggle-icon {
+    font-size: 14px; transition: transform 0.25s;
+  }
+  .advanced-panel.open .advanced-toggle-icon {
+    transform: rotate(90deg);
+  }
+  .advanced-toggle-text {
+    flex: 1; text-align: left;
+    font-family: 'Syne', sans-serif; font-size: 13px;
+    font-weight: 700; color: var(--muted);
+  }
+  .advanced-toggle-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; color: var(--muted2);
+    letter-spacing: 0.03em;
+  }
+  .advanced-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 18px;
+  }
+  .advanced-panel.open .advanced-body {
+    max-height: 300px;
+    padding: 4px 18px 18px;
+  }
+  .advanced-btns {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .adv-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border2); background: var(--card2);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .adv-btn:hover {
+    border-color: var(--accent); background: var(--accent-dim);
+  }
+  .adv-btn:active { transform: scale(0.98); }
+  .adv-btn-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .adv-btn-icon.zshrc  { background: rgba(52,211,153,0.12); }
+  .adv-btn-icon.claude { background: rgba(99,102,241,0.12); }
+  .adv-btn-icon.vscode { background: rgba(59,130,246,0.12); }
+  .adv-btn-info { flex: 1; text-align: left; }
+  .adv-btn-name {
+    font-family: 'Syne', sans-serif; font-size: 12px;
+    font-weight: 700; color: var(--text);
+  }
+  .adv-btn-path {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--muted); margin-top: 2px;
+  }
+  .adv-btn-arrow {
+    color: var(--muted2); font-size: 14px; flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .adv-btn:hover .adv-btn-arrow { color: var(--accent); }
+
   /* ── Footer Signature ── */
   .footer-signature {
     text-align: center;
@@ -590,6 +667,43 @@
     <div class="section-label">历史快照（同步前自动保存，最多 10 条）</div>
     <div class="history-list" id="historyList">
       <div class="empty-state" style="margin-bottom:0">暂无快照 · 每次同步到 .zshrc 前会自动保存一条</div>
+    </div>
+  </div>
+
+  <!-- Advanced Panel -->
+  <div class="advanced-panel" id="advancedPanel">
+    <button class="advanced-toggle" onclick="toggleAdvanced()">
+      <span class="advanced-toggle-icon">▶</span>
+      <span class="advanced-toggle-text">🔧 高级功能</span>
+      <span class="advanced-toggle-hint">看不懂说明用不到，默认就完美</span>
+    </button>
+    <div class="advanced-body">
+      <div class="advanced-btns">
+        <button class="adv-btn" onclick="openConfigFile('zshrc')">
+          <div class="adv-btn-icon zshrc">📄</div>
+          <div class="adv-btn-info">
+            <div class="adv-btn-name">终端环境变量</div>
+            <div class="adv-btn-path">~/.zshrc</div>
+          </div>
+          <span class="adv-btn-arrow">↗</span>
+        </button>
+        <button class="adv-btn" onclick="openConfigFile('claude')">
+          <div class="adv-btn-icon claude">⚡</div>
+          <div class="adv-btn-info">
+            <div class="adv-btn-name">Claude Code 配置</div>
+            <div class="adv-btn-path">~/.claude/settings.json</div>
+          </div>
+          <span class="adv-btn-arrow">↗</span>
+        </button>
+        <button class="adv-btn" onclick="openConfigFile('vscode')">
+          <div class="adv-btn-icon vscode">🖥️</div>
+          <div class="adv-btn-info">
+            <div class="adv-btn-name">VSCode 用户设置</div>
+            <div class="adv-btn-path">~/Library/.../Code/User/settings.json</div>
+          </div>
+          <span class="adv-btn-arrow">↗</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -996,6 +1110,30 @@
       ? '代理地址 <span class="opt">（OPENAI_BASE_URL · 必填）</span>'
       : '代理地址 <span class="opt">（ANTHROPIC_BASE_URL · 必填）</span>';
     document.getElementById('keyInput').placeholder = isCodex ? 'sk-...' : 'sk-ant-...';
+  }
+
+  // ── Advanced panel toggle ──────────────────────
+  function toggleAdvanced() {
+    document.getElementById('advancedPanel').classList.toggle('open');
+  }
+
+  // ── Open config file ──────────────────────────
+  async function openConfigFile(file) {
+    try {
+      const r = await fetch(API + '/open-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file })
+      });
+      const data = await r.json();
+      if (data.ok) {
+        toast('📂 已打开 ' + data.path, 'ok');
+      } else {
+        throw new Error(data.msg);
+      }
+    } catch (e) {
+      toast('❌ 打开失败：' + e.message, 'err');
+    }
   }
 
   hydrate();

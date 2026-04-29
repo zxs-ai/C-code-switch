@@ -424,6 +424,34 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // POST /open-file  body: { file: 'zshrc' | 'claude' | 'vscode' }
+  if (req.method === 'POST' && req.url === '/open-file') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { file } = JSON.parse(body);
+        const fileMap = {
+          zshrc:  ZSHRC,
+          claude: CLAUDE_SETTINGS,
+          vscode: VSCODE_SETTINGS,
+        };
+        const target = fileMap[file];
+        if (!target) throw new Error('未知文件类型: ' + file);
+        if (!fs.existsSync(target)) throw new Error('文件不存在: ' + target);
+
+        spawn('open', [target], { detached: true, stdio: 'ignore' }).unref();
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, path: target }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, msg: e.message }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(404); res.end();
 });
 
